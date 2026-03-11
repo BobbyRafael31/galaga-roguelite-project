@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2279ea12a7c3acf4fa16fd3cba083a8b, type: 3}
+  m_Name: Formation_Pyramid
+  m_EditorClassIdentifier: Assembly-CSharp::FormationData
+  Rows: 6
+  Columns: 6
+  CellWidth: 3
+  CellHeight: 2
+  Type: 2
+  SwaySpeed: 2
+  SwayAmplitude: 0.5
+  LayoutMask:
+  - Cells: 010101010101
+  - Cells: 000101010100
+  - Cells: 000001010000
+  - Cells: 000000000000
+  - Cells: 000000000000
+  - Cells: 000000000000
