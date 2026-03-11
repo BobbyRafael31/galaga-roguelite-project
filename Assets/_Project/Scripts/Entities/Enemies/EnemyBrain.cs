@@ -60,12 +60,12 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
         _currentPathIndex = 0;
         _isLockedInFormation = false;
         _spawnTime = Time.time;
+        _entrancePath = null;
 
         if (FastCollisionManager.Instance != null)
+        {
             FastCollisionManager.Instance.RegisterEnemy(this);
-
-        if (_entrancePath != null && _entrancePath.BakedPath != null && _entrancePath.BakedPath.Length > 0)
-            transform.position = _entrancePath.BakedPath[0];
+        }
     }
 
     private void OnDisable()
