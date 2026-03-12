@@ -45,6 +45,11 @@ public class WaveSpawner : MonoBehaviour
 
         Debug.Log($"[WaveSpawner] Stage Started: {_currentStage.Waves.Count} Waves.");
 
+        if (CombatDirector.Instance != null)
+        {
+            CombatDirector.Instance.SetAggression(_currentStage.Aggression);
+        }
+
         for (int w = 0; w < _currentStage.Waves.Count; w++)
         {
             WaveData wave = _currentStage.Waves[w];

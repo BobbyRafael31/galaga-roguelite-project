@@ -34,6 +34,8 @@ public class FastCollisionManager : MonoBehaviour
     public void RegisterEnemyBullet(IAABBEntity bullet) => _enemyBullets.Add(bullet);
     public void UnregisterEnemyBullet(IAABBEntity bullet) => _enemyBullets.Remove(bullet);
 
+    public int GetEnemyBulletCount() => _enemyBullets.Count;
+
     private void Update()
     {
         CheckPlayerBulletsVsEnemies();

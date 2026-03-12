@@ -12,6 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 0}
   m_Name: Stage_1
   m_EditorClassIdentifier: Assembly-CSharp::StageData
+  Aggression:
+    MaxActiveDives: 2
+    DiveTokenCooldown: 3
+    MaxActiveProjectiles: 3
+    ShootTokenCooldown: 1.5
+    EnemyProjectileSpeed: 6
   Waves:
   - {fileID: 11400000, guid: e4365799ac67abd489ee9ed4950cd681, type: 2}
   - {fileID: 11400000, guid: d0a5b4ed65b3c4f478a1e7ffce3c7591, type: 2}
