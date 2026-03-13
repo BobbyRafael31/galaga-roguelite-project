@@ -16,6 +16,16 @@ public class BatchData
 public class WaveData : ScriptableObject
 {
     public FormationData Formation;
+
+    public CombatSettings Aggression = new CombatSettings
+    {
+        MaxActiveDives = 2,
+        DiveTokenCooldown = 3f,
+        MaxActiveProjectiles = 3,
+        ShootTokenCooldown = 1.5f,
+        EnemyProjectileSpeed = 6f
+    };
+
     [HideInInspector] public List<BatchData> Batches = new List<BatchData>();
 }
 
@@ -43,14 +53,5 @@ public struct CombatSettings
 [CreateAssetMenu(fileName = "Stage_", menuName = "Project/Enemy Data/Stage Data")]
 public class StageData : ScriptableObject
 {
-    public CombatSettings Aggression = new CombatSettings
-    {
-        MaxActiveDives = 2,
-        DiveTokenCooldown = 3f,
-        MaxActiveProjectiles = 3,
-        ShootTokenCooldown = 1.5f,
-        EnemyProjectileSpeed = 6f
-    };
-
     public List<WaveData> Waves = new List<WaveData>();
 }

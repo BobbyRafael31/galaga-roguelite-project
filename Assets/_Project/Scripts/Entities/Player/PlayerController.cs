@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    public static PlayerController Instance { get; private set; }
+
     [Header("Input")]
     [SerializeField] private InputReader _inputReader;
 
@@ -19,7 +21,10 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
-        MoveSpeed = new Stat(_baseMoveSpeed);
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+
+         MoveSpeed = new Stat(_baseMoveSpeed);
         _mainCamera = Camera.main;
     }
 

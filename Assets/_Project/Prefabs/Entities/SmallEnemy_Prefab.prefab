@@ -104,12 +104,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3238294d452bb3e4289e7ce253e4f7e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
-  _entrancePath: {fileID: 11400000, guid: abcc25b956feae04a8b3841f69def8a4, type: 2}
   _moveSpeed: 10
-  _assignedRow: 0
-  _assignedCol: 0
   _formationSnapSpeed: 10
+  DivePath: {fileID: 11400000, guid: e50d911eead6a7b41bc73b743386f9d2, type: 2}
   _maxHealth: 1
   _scoreValue: 100
-  _spawnVulnerability: 1
+  _spawnInvulnerability: 1
   _extents: {x: 0.45, y: 0.45}

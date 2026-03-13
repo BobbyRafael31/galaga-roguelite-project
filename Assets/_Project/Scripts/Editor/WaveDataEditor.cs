@@ -34,6 +34,7 @@ public class WaveDataEditor : Editor
         serializedObject.Update();
 
         EditorGUILayout.PropertyField(serializedObject.FindProperty("Formation"));
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("Aggression"));
         EditorGUILayout.Space(10);
 
         GUILayout.Label("Wave Batches", EditorStyles.boldLabel);

@@ -9,14 +9,21 @@ public enum EnemyState
     Return
 }
 
+public enum DivePhase
+{
+    Breakaway,
+    Swerving,
+    Looping,
+    Homing,
+    Hardlock
+}
+
 public class EnemyBrain : MonoBehaviour, IAABBEntity
 {
     [Header("Pathing & State")]
     [SerializeField] private float _moveSpeed = 10f;
-    [SerializeField] private float _formationSnapSpeed = 10f;
-
-    [Tooltip("The path the enemy takes when diving (relative to its seat).")]
-    public PathData DivePath;
+    [SerializeField] private float _formationSnapSpeed = 15f;
+    [SerializeField] private float _homingTurnSpeed = 4f;
 
     [Header("Stats")]
     [SerializeField] private float _maxHealth = 1f;
@@ -29,7 +36,6 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
     public Vector2 Position => transform.position;
     public Vector2 Extents => _extents;
     public bool IsActive => gameObject.activeInHierarchy && !_isDead && Time.time > _spawnTime + _spawnInvulnerability;
-
     public EnemyState CurrentState => _currentState;
 
     private EnemyState _currentState;
@@ -46,10 +52,26 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
 
     private Vector3 _previousPosition;
     private Vector3 _currentVelocity;
+    private Camera _mainCamera;
+    private float _cameraZDistance;
+
+    private DivePhase _currentDivePhase;
+    private float _divePhaseTimer;
+    private float _accumulatedLoopAngle;
+    private int _targetLoops;
+    private float _diveTurnDirection;
+    private Vector3 _diveVelocity;
+
+    private float _swerveTime;
+    private float _swerveAmp;
+    private float _swerveFreq;
+    private Vector3 _loopCurrentDir;
+    private float _currentLoopTurnSpeed;
 
     private void Awake()
     {
         _originalPoolParent = transform.parent;
+        _mainCamera = Camera.main;
     }
 
     private void OnEnable()
@@ -63,9 +85,10 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
         _entrancePath = null;
 
         _previousPosition = transform.position;
+        transform.rotation = Quaternion.identity;
 
+        if (_mainCamera != null) _cameraZDistance = Mathf.Abs(_mainCamera.transform.position.z - transform.position.z);
         if (FastCollisionManager.Instance != null) FastCollisionManager.Instance.RegisterEnemy(this);
-
         if (CombatDirector.Instance != null) CombatDirector.Instance.RegisterEnemy(this);
     }
 
@@ -73,7 +96,6 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
     {
         if (FastCollisionManager.Instance != null) FastCollisionManager.Instance.UnregisterEnemy(this);
         if (CombatDirector.Instance != null) CombatDirector.Instance.UnregisterEnemy(this);
-
         if (_originalPoolParent != null) transform.SetParent(_originalPoolParent);
     }
 
@@ -86,26 +108,30 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
 
     private void Update()
     {
-        _currentVelocity = (transform.position - _previousPosition).normalized;
+        Vector3 movementDelta = transform.position - _previousPosition;
+        if (movementDelta.sqrMagnitude > 0.00001f)
+        {
+            _currentVelocity = movementDelta.normalized;
+        }
         _previousPosition = transform.position;
+
+        if (_currentState == EnemyState.Formation && _isLockedInFormation)
+        {
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.identity, 360f * Time.deltaTime);
+        }
+        else if (movementDelta.sqrMagnitude > 0.00001f)
+        {
+            float angle = Mathf.Atan2(_currentVelocity.y, _currentVelocity.x) * Mathf.Rad2Deg - 90f;
+            transform.rotation = Quaternion.Euler(0, 0, angle);
+        }
 
         switch (_currentState)
         {
-            case EnemyState.Entrance:
-                HandleEntranceState();
-                break;
-            case EnemyState.Formation:
-                HandleFormationState();
-                break;
-            case EnemyState.Dive:
-                HandleDiveState();
-                break;
-            case EnemyState.WrapAround:
-                HandleWrapAroundState();
-                break;
-            case EnemyState.Return:
-                HandleReturnState();
-                break;
+            case EnemyState.Entrance: HandleEntranceState(); break;
+            case EnemyState.Formation: HandleFormationState(); break;
+            case EnemyState.Dive: HandleProceduralDive(); break;
+            case EnemyState.WrapAround: HandleWrapAroundState(); break;
+            case EnemyState.Return: HandleReturnState(); break;
         }
     }
 
@@ -123,10 +149,7 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
         if ((transform.position - targetPos).sqrMagnitude < 0.001f)
         {
             _currentPathIndex++;
-            if (_currentPathIndex >= _entrancePath.BakedPath.Length)
-            {
-                _currentState = EnemyState.Formation;
-            }
+            if (_currentPathIndex >= _entrancePath.BakedPath.Length) _currentState = EnemyState.Formation;
         }
     }
 
@@ -147,41 +170,160 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
         }
     }
 
-    private void HandleDiveState()
+
+    public void StartDive()
     {
-        // TO DO
-        Debug.Log($"{gameObject.name} is diving");
+        bool isFromEntrance = (_currentState == EnemyState.Entrance);
+        if (_currentState != EnemyState.Formation && !isFromEntrance) return;
+
+        _currentState = EnemyState.Dive;
+        _isLockedInFormation = false;
+
+        float distToPlayer = 10f;
+        if (PlayerController.Instance != null)
+        {
+            distToPlayer = Vector3.Distance(transform.position, PlayerController.Instance.transform.position);
+        }
+
+        _targetLoops = distToPlayer > 8f ? 2 : (distToPlayer > 4f ? 1 : 0);
+
+        _swerveTime = 0f;
+        _swerveAmp = Random.Range(30f, 60f);
+        _swerveFreq = Random.Range(2f, 3.5f);
+        _divePhaseTimer = 0f;
+
+        _currentLoopTurnSpeed = Random.Range(250f, 600f);
+
+        _diveTurnDirection = transform.position.x > 0 ? 1f : -1f;
+
+        if (isFromEntrance)
+        {
+            _diveVelocity = _currentVelocity.normalized * _moveSpeed;
+            _currentDivePhase = DivePhase.Swerving;
+        }
+        else
+        {
+            _currentDivePhase = DivePhase.Breakaway;
+            _diveVelocity = new Vector3(_diveTurnDirection * 0.8f, 1f, 0).normalized * _moveSpeed;
+        }
+    }
+
+    private void HandleProceduralDive()
+    {
+        float dt = Time.deltaTime;
+        Vector3 playerPos = PlayerController.Instance != null ? PlayerController.Instance.transform.position : transform.position + Vector3.down * 10f;
+        float distToPlayerY = transform.position.y - playerPos.y;
+
+        switch (_currentDivePhase)
+        {
+            case DivePhase.Breakaway:
+                _divePhaseTimer += dt;
+
+                _diveVelocity = Quaternion.Euler(0, 0, -180f * _diveTurnDirection * dt) * _diveVelocity;
+
+                if (_divePhaseTimer > 0.4f)
+                {
+                    _currentDivePhase = DivePhase.Swerving;
+                    _divePhaseTimer = 0f;
+                }
+                break;
+
+            case DivePhase.Swerving:
+                _divePhaseTimer += dt;
+                _swerveTime += dt;
+
+                Vector3 baseDir = (playerPos - transform.position).normalized;
+                if (baseDir.y > -0.2f) baseDir = new Vector3(baseDir.x, -1f, 0).normalized;
+
+
+                float sOffset = Mathf.Cos(_swerveTime * _swerveFreq) * _swerveAmp * _diveTurnDirection;
+                Vector3 targetSwerveDir = Quaternion.Euler(0, 0, sOffset) * baseDir;
+
+                _diveVelocity = Vector3.RotateTowards(_diveVelocity.normalized, targetSwerveDir, _homingTurnSpeed * 1.5f * dt, 0f) * _moveSpeed;
+
+                if (_targetLoops > 0 && _divePhaseTimer > Random.Range(0.4f, 0.7f))
+                {
+                    _currentDivePhase = DivePhase.Looping;
+                    _accumulatedLoopAngle = 0f;
+                    _loopCurrentDir = _diveVelocity.normalized;
+                }
+                else if (distToPlayerY < 4.5f)
+                {
+                    _currentDivePhase = DivePhase.Homing;
+                }
+                break;
+
+           case DivePhase.Looping:
+                float turnStep = _currentLoopTurnSpeed * dt;
+
+                _loopCurrentDir = Quaternion.Euler(0, 0, turnStep * _diveTurnDirection) * _loopCurrentDir;
+
+                _diveVelocity = (_loopCurrentDir + (Vector3.down * 0.2f)).normalized * _moveSpeed;
+
+                _accumulatedLoopAngle += turnStep;
+                if (_accumulatedLoopAngle >= 360f)
+                {
+                    _targetLoops--;
+                    _currentDivePhase = DivePhase.Swerving;
+                    _divePhaseTimer = 0f;
+                }
+                break;
+
+            case DivePhase.Homing:
+                Vector3 homingDir = (playerPos - transform.position).normalized;
+                if (homingDir.y > -0.2f) homingDir = new Vector3(homingDir.x, -1f, 0).normalized;
+
+                _diveVelocity = Vector3.RotateTowards(_diveVelocity.normalized, homingDir, _homingTurnSpeed * dt, 0f) * _moveSpeed;
+
+                if (distToPlayerY < 2.5f) _currentDivePhase = DivePhase.Hardlock;
+                break;
+
+            case DivePhase.Hardlock:
+                // Blind straight-line vector
+                break;
+        }
+
+        transform.position += _diveVelocity * dt;
+        CheckOffScreen();
+    }
+    private void CheckOffScreen()
+    {
+        if (_mainCamera != null)
+        {
+            float bottomY = _mainCamera.ViewportToWorldPoint(new Vector3(0, -0.1f, _cameraZDistance)).y;
+            if (transform.position.y < bottomY) _currentState = EnemyState.WrapAround;
+        }
     }
 
     private void HandleWrapAroundState()
     {
-        // TO DO
+        if (_mainCamera != null)
+        {
+            float topY = _mainCamera.ViewportToWorldPoint(new Vector3(0, 1.1f, _cameraZDistance)).y;
+            transform.position = new Vector3(transform.position.x, topY, transform.position.z);
+        }
+        _currentState = EnemyState.Return;
     }
 
     private void HandleReturnState()
     {
-        // TO DO
-    }
+        if (FormationManager.Instance == null) return;
 
-    public void StartDive()
-    {
-        if (_currentState != EnemyState.Formation) return;
+        Vector3 targetSeat = FormationManager.Instance.GetSeatPosition(_assignedRow, _assignedCol);
+        transform.position = Vector3.MoveTowards(transform.position, targetSeat, _formationSnapSpeed * Time.deltaTime);
 
-        _currentState = EnemyState.Dive;
-        _isLockedInFormation = false;
-        _currentPathIndex = 0;
-
-        // The mathematical translation logic for the relative dive will go here
+        if ((transform.position - targetSeat).sqrMagnitude < 0.001f)
+        {
+            _isLockedInFormation = true;
+            _currentState = EnemyState.Formation;
+            if (CombatDirector.Instance != null) CombatDirector.Instance.ReportDiveCompleted();
+        }
     }
 
     public bool TryShoot(EnemyBullet bulletPrefab, float bulletSpeed)
     {
         float dotProduct = Vector3.Dot(Vector3.down, _currentVelocity);
-
-        if (dotProduct < 0.5f && _currentState != EnemyState.Formation)
-        {
-            return false;
-        }
+        if (dotProduct < 0.5f && _currentState != EnemyState.Formation) return false;
 
         if (PoolManager.Instance != null)
         {
@@ -189,7 +331,6 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
             bullet.SetSpeed(bulletSpeed);
             return true;
         }
-
         return false;
     }
 
@@ -208,6 +349,7 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
     private void Die()
     {
         _isDead = true;
+        if (_currentState == EnemyState.Dive && CombatDirector.Instance != null) CombatDirector.Instance.ReportDiveCompleted();
         EventBus.OnEnemyDestroyed?.Invoke(_scoreValue);
 
         if (PoolManager.Instance != null) PoolManager.Instance.Release(this);
