@@ -12,6 +12,7 @@ public static class EventBus
     public static Action<int> OnWaveStarted;
     public static Action<int> OnWaveCompleted;
     public static Action OnStageCleared;
+    public static Action OnClearArena;
 
     // UI or Economy Events
     public static Action<int> OnScoreChanged;
@@ -26,5 +27,6 @@ public static class EventBus
         OnWaveCompleted = null;
         OnStageCleared = null;
         OnScoreChanged = null;
+        OnClearArena = null;
     }
 }

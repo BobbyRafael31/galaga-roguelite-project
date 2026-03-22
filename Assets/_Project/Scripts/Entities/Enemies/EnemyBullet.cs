@@ -24,12 +24,16 @@ public class EnemyBullet : MonoBehaviour, IAABBEntity
     {
         if (FastCollisionManager.Instance != null)
             FastCollisionManager.Instance.RegisterEnemyBullet(this);
+
+        EventBus.OnClearArena += Despawn;
     }
 
     private void OnDisable()
     {
         if (FastCollisionManager.Instance != null)
             FastCollisionManager.Instance.UnregisterEnemyBullet(this);
+
+        EventBus.OnClearArena -= Despawn;
     }
 
     public void SetSpeed(float newSpeed)

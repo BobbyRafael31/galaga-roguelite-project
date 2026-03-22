@@ -90,6 +90,8 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
         if (_mainCamera != null) _cameraZDistance = Mathf.Abs(_mainCamera.transform.position.z - transform.position.z);
         if (FastCollisionManager.Instance != null) FastCollisionManager.Instance.RegisterEnemy(this);
         if (CombatDirector.Instance != null) CombatDirector.Instance.RegisterEnemy(this);
+
+        EventBus.OnClearArena += Die;
     }
 
     private void OnDisable()
@@ -97,6 +99,8 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
         if (FastCollisionManager.Instance != null) FastCollisionManager.Instance.UnregisterEnemy(this);
         if (CombatDirector.Instance != null) CombatDirector.Instance.UnregisterEnemy(this);
         if (_originalPoolParent != null) transform.SetParent(_originalPoolParent);
+
+        EventBus.OnClearArena -= Die;
     }
 
     public void InitializeFormationSeat(int row, int col, PathData path)
@@ -165,9 +169,8 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
             if ((transform.position - targetSeat).sqrMagnitude < 0.001f) _isLockedInFormation = true;
         }
         else
-        {
             transform.position = targetSeat;
-        }
+
     }
 
 
@@ -179,13 +182,7 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
         _currentState = EnemyState.Dive;
         _isLockedInFormation = false;
 
-        float distToPlayer = 10f;
-        if (PlayerController.Instance != null)
-        {
-            distToPlayer = Vector3.Distance(transform.position, PlayerController.Instance.transform.position);
-        }
-
-        _targetLoops = distToPlayer > 8f ? 2 : (distToPlayer > 4f ? 1 : 0);
+        _targetLoops = Random.Range(0, 3);
 
         _swerveTime = 0f;
         _swerveAmp = Random.Range(30f, 60f);

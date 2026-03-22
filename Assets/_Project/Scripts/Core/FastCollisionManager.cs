@@ -9,7 +9,6 @@ public interface IAABBEntity
     void OnCollide(IAABBEntity other);
 }
 
-
 public class FastCollisionManager : MonoBehaviour
 {
     public static FastCollisionManager Instance { get; private set; }
@@ -26,6 +25,15 @@ public class FastCollisionManager : MonoBehaviour
     }
 
     public void RegisterPlayer(IAABBEntity player) => _player = player;
+
+    public void UnregisterPlayer(IAABBEntity player)
+    {
+        if (_player == player)
+        {
+            _player = null;
+        }
+    }
+
     public void RegisterPlayerBullet(IAABBEntity bullet) => _playerBullets.Add(bullet);
     public void UnregisterPlayerBullet(IAABBEntity bullet) => _playerBullets.Remove(bullet);
 
@@ -35,6 +43,9 @@ public class FastCollisionManager : MonoBehaviour
     public void UnregisterEnemyBullet(IAABBEntity bullet) => _enemyBullets.Remove(bullet);
 
     public int GetEnemyBulletCount() => _enemyBullets.Count;
+
+    public System.Collections.Generic.IReadOnlyList<IAABBEntity> Enemies => _enemies;
+    public System.Collections.Generic.IReadOnlyList<IAABBEntity> EnemyBullets => _enemyBullets;
 
     private void Update()
     {

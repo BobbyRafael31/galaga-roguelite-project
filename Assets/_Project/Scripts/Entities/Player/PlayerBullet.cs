@@ -25,12 +25,16 @@ public class PlayerBullet : MonoBehaviour, IAABBEntity
     {
         if (FastCollisionManager.Instance != null)
             FastCollisionManager.Instance.RegisterPlayerBullet(this);
+
+        EventBus.OnClearArena += Despawn;
     }
 
     private void OnDisable()
     {
         if (FastCollisionManager.Instance != null)
             FastCollisionManager.Instance.UnregisterPlayerBullet(this);
+
+        EventBus.OnClearArena -= Despawn;
     }
 
     private void Update()
