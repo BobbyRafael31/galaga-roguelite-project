@@ -51,9 +51,13 @@ public class FastCollisionManager : MonoBehaviour
     {
         CheckPlayerBulletsVsEnemies();
 
-        if (_player != null && _player.IsActive)
+        if (_player as MonoBehaviour != null && _player.IsActive)
         {
             CheckPlayerVsEnemies();
+        }
+
+        if (_player as MonoBehaviour != null && _player.IsActive)
+        {
             CheckPlayerVsEnemyBullets();
         }
     }
@@ -83,15 +87,17 @@ public class FastCollisionManager : MonoBehaviour
 
     private void CheckPlayerVsEnemies()
     {
-        for (int i = _enemies.Count - 1; i >= 0; i-- )
+        for (int i = _enemies.Count - 1; i >= 0; i--)
         {
             var enemy = _enemies[i];
             if (!enemy.IsActive) continue;
 
-            if(CheckAABB(_player, enemy))
+            if (CheckAABB(_player, enemy))
             {
                 _player.OnCollide(enemy);
                 enemy.OnCollide(_player);
+
+                break;
             }
         }
     }
@@ -107,6 +113,7 @@ public class FastCollisionManager : MonoBehaviour
             {
                 _player.OnCollide(bullet);
                 bullet.OnCollide(_player);
+                break;
             }
         }
     }

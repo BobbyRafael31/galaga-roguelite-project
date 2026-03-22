@@ -67,11 +67,14 @@ public class EnemyBullet : MonoBehaviour, IAABBEntity
         if (_mainCamera != null)
         {
             float zDistance = Mathf.Abs(_mainCamera.transform.position.z - transform.position.z);
-            _despawnY = _mainCamera.ViewportToWorldPoint(new Vector3(0, 0.1f, zDistance)).y;
+            _despawnY = _mainCamera.ViewportToWorldPoint(new Vector3(0, -0.1f, zDistance)).y;
         }
         else
-            _despawnY = -15f; //FALLBACK
+        {
+            _despawnY = -15f;
+        }
     }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.magenta;
