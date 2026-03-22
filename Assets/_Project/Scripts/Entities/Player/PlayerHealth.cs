@@ -12,6 +12,10 @@ public class PlayerHealth : MonoBehaviour, IAABBEntity
     [Tooltip("Half-width and half-height for the player's hurtbox. Usually smaller than the sprite for arcade fairness.")]
     [SerializeField] private Vector2 _extents = new Vector2(0.4f, 0.4f);
 
+    [Header("UI Settings")]
+    [SerializeField] private Sprite _defaultIconSprite;
+    private SpriteRenderer _spriteRenderer;
+
     public Stat MaxHealth { get; private set; }
     public float CurrentHealth { get; private set; }
 
@@ -26,15 +30,25 @@ public class PlayerHealth : MonoBehaviour, IAABBEntity
     private void Awake()
     {
         MaxHealth = new Stat(_baseMaxHealth);
+
+        _spriteRenderer = GetComponent<SpriteRenderer>();
+        if (_defaultIconSprite == null && _spriteRenderer != null)
+        {
+            _defaultIconSprite = _spriteRenderer.sprite;
+        }
     }
 
     private void OnEnable()
     {
+        _isDead = false;
+        CurrentHealth = MaxHealth.Value;
+
         if (FastCollisionManager.Instance != null)
             FastCollisionManager.Instance.RegisterPlayer(this);
 
-        _isDead = false;
-        CurrentHealth = MaxHealth.Value;
+        EventBus.OnPlayerHealthInitialized?.Invoke(Mathf.FloorToInt(CurrentHealth),
+            Mathf.FloorToInt(MaxHealth.Value), _defaultIconSprite);
+
     }
 
     public void OnCollide(IAABBEntity other)
@@ -52,7 +66,7 @@ public class PlayerHealth : MonoBehaviour, IAABBEntity
             Die();
         else
         {
-            EventBus.OnPlayerHit?.Invoke();
+            EventBus.OnPlayerHit?.Invoke(Mathf.FloorToInt(CurrentHealth));
             Debug.Log($"[PlayerHealth] Hit! HP remaining: {CurrentHealth}. I-Frames active for {_iFrameDuration}s.");
         }
     }

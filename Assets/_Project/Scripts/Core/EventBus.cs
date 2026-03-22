@@ -4,7 +4,8 @@ public static class EventBus
 {
     // Gameplay Events
     public static Action<int> OnEnemyDestroyed;
-    public static Action OnPlayerHit;
+    public static Action<int, int, UnityEngine.Sprite> OnPlayerHealthInitialized;
+    public static Action<int> OnPlayerHit;
     public static Action OnPlayerDeath;
 
     // Progression Events
