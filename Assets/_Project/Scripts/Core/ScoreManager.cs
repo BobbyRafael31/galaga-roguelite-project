@@ -6,6 +6,8 @@ public class ScoreManager : MonoBehaviour
 
     public int CurrentScore { get; private set; }
 
+    public float ScoreMultiplier = 1.0f;
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
@@ -26,14 +28,16 @@ public class ScoreManager : MonoBehaviour
 
     private void AddScore(int amount)
     {
-        CurrentScore += amount;
+        int finalAmount = Mathf.FloorToInt(amount * ScoreMultiplier);
 
+        CurrentScore += finalAmount;
         EventBus.OnScoreChanged?.Invoke(CurrentScore);
     }
 
     public void ResetScore()
     {
         CurrentScore = 0;
+        ScoreMultiplier = 1.0f; // Reset on new run
         EventBus.OnScoreChanged?.Invoke(CurrentScore);
     }
 

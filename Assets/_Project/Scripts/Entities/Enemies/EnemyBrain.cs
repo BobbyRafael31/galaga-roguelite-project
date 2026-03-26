@@ -20,6 +20,9 @@ public enum DivePhase
 
 public class EnemyBrain : MonoBehaviour, IAABBEntity
 {
+    private float ActiveMoveSpeed => _moveSpeed * (CombatDirector.Instance != null ? CombatDirector.Instance.GlobalEnemySpeedMultiplier : 1f);
+    private float ActiveSnapSpeed => _formationSnapSpeed * (CombatDirector.Instance != null ? CombatDirector.Instance.GlobalEnemySpeedMultiplier : 1f);
+
     [Header("Pathing & State")]
     [SerializeField] private float _moveSpeed = 10f;
     [SerializeField] private float _formationSnapSpeed = 15f;
@@ -148,7 +151,7 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
         }
 
         Vector3 targetPos = _entrancePath.BakedPath[_currentPathIndex];
-        transform.position = Vector3.MoveTowards(transform.position, targetPos, _moveSpeed * Time.deltaTime);
+        transform.position = Vector3.MoveTowards(transform.position, targetPos, ActiveMoveSpeed * Time.deltaTime);
 
         if ((transform.position - targetPos).sqrMagnitude < 0.001f)
         {
@@ -165,7 +168,7 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
 
         if (!_isLockedInFormation)
         {
-            transform.position = Vector3.MoveTowards(transform.position, targetSeat, _formationSnapSpeed * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, targetSeat, ActiveSnapSpeed * Time.deltaTime);
             if ((transform.position - targetSeat).sqrMagnitude < 0.001f) _isLockedInFormation = true;
         }
         else
@@ -195,13 +198,13 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
 
         if (isFromEntrance)
         {
-            _diveVelocity = _currentVelocity.normalized * _moveSpeed;
+            _diveVelocity = _currentVelocity.normalized * ActiveMoveSpeed;
             _currentDivePhase = DivePhase.Swerving;
         }
         else
         {
             _currentDivePhase = DivePhase.Breakaway;
-            _diveVelocity = new Vector3(_diveTurnDirection * 0.8f, 1f, 0).normalized * _moveSpeed;
+            _diveVelocity = new Vector3(_diveTurnDirection * 0.8f, 1f, 0).normalized * ActiveMoveSpeed;
         }
     }
 
@@ -236,7 +239,7 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
                 float sOffset = Mathf.Cos(_swerveTime * _swerveFreq) * _swerveAmp * _diveTurnDirection;
                 Vector3 targetSwerveDir = Quaternion.Euler(0, 0, sOffset) * baseDir;
 
-                _diveVelocity = Vector3.RotateTowards(_diveVelocity.normalized, targetSwerveDir, _homingTurnSpeed * 1.5f * dt, 0f) * _moveSpeed;
+                _diveVelocity = Vector3.RotateTowards(_diveVelocity.normalized, targetSwerveDir, _homingTurnSpeed * 1.5f * dt, 0f) * ActiveMoveSpeed;
 
                 if (_targetLoops > 0 && _divePhaseTimer > Random.Range(0.4f, 0.7f))
                 {
@@ -255,7 +258,7 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
 
                 _loopCurrentDir = Quaternion.Euler(0, 0, turnStep * _diveTurnDirection) * _loopCurrentDir;
 
-                _diveVelocity = (_loopCurrentDir + (Vector3.down * 0.2f)).normalized * _moveSpeed;
+                _diveVelocity = (_loopCurrentDir + (Vector3.down * 0.2f)).normalized * ActiveMoveSpeed;
 
                 _accumulatedLoopAngle += turnStep;
                 if (_accumulatedLoopAngle >= 360f)
@@ -270,7 +273,7 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
                 Vector3 homingDir = (playerPos - transform.position).normalized;
                 if (homingDir.y > -0.2f) homingDir = new Vector3(homingDir.x, -1f, 0).normalized;
 
-                _diveVelocity = Vector3.RotateTowards(_diveVelocity.normalized, homingDir, _homingTurnSpeed * dt, 0f) * _moveSpeed;
+                _diveVelocity = Vector3.RotateTowards(_diveVelocity.normalized, homingDir, _homingTurnSpeed * dt, 0f) * ActiveMoveSpeed;
 
                 if (distToPlayerY < 2.5f) _currentDivePhase = DivePhase.Hardlock;
                 break;
@@ -307,7 +310,7 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
         if (FormationManager.Instance == null) return;
 
         Vector3 targetSeat = FormationManager.Instance.GetSeatPosition(_assignedRow, _assignedCol);
-        transform.position = Vector3.MoveTowards(transform.position, targetSeat, _formationSnapSpeed * Time.deltaTime);
+        transform.position = Vector3.MoveTowards(transform.position, targetSeat, ActiveSnapSpeed * Time.deltaTime);
 
         if ((transform.position - targetSeat).sqrMagnitude < 0.001f)
         {

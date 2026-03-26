@@ -5,6 +5,9 @@ public class GameStateManager : MonoBehaviour
     public static GameStateManager Instance { get; private set; }
     [Header("UI Dependencies")]
     public GameObject MainMenuUI;
+    public GameObject ShopUI;
+
+    public ShopState ShopState { get; private set; }
 
     [Header("Gameplay Dependencies")]
     public WaveSpawner WaveSpawner;
@@ -27,10 +30,22 @@ public class GameStateManager : MonoBehaviour
 
         MenuState = new MainMenuState(this);
         PlayState = new GameplayState(this);
+        ShopState = new ShopState(this);
     }
 
     private void Start() => ChangeState(MenuState);
     private void Update() => _currentState?.Tick();
+
+    private void OnEnable()
+    {
+        EventBus.OnStageCleared += HandleStageCleared;
+    }
+
+    private void OnDisable()
+    {
+        EventBus.OnStageCleared -= HandleStageCleared;
+    }
+
 
     public void ChangeState(IGameState newState)
     {
@@ -50,6 +65,16 @@ public class GameStateManager : MonoBehaviour
         if (_activePlayerInstance != null) Destroy(_activePlayerInstance);
         _activePlayerInstance = Instantiate(RealPlayerPrefab, PlayerSpawnPoint.position, Quaternion.identity);
     }
+    private void HandleStageCleared()
+    {
+        ChangeState(ShopState);
+    }
+
+    public void OnLeaveShopClicked()
+    {
+        ChangeState(PlayState);
+    }
+
 
     public void OnStartGameClicked()
     {

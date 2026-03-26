@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ae19a82e8a54db468b6224694555228, type: 3}
+  m_Name: SSS_GlassCannon
+  m_EditorClassIdentifier: Assembly-CSharp::CursedUpgradeData
+  UpgradeName: Glass Cannon
+  Description: '[BUFF] +100% Fire Rate, +3 Max Bullets. [CURSE] Max HP permanently
+    locked to 1.'
+  CoinIcon: {fileID: -2413806693520163455, guid: 6ef88cf81851471449080a13ef2fec16, type: 3}
+  Tier: 2
+  BaseCost: 8000
+  MaxLevel: 1
+  CostScalingPerLevel: 0
+  BaseRNGWeight: 10
+  TargetStat: 0
+  StatModifierValue: 0
+  ModifierType: 0
+  Mechanic: 5
+  Curses:
+  - TargetStat: 2
+    Value: -0.5
+    ModType: 2
+  - TargetStat: 3
+    Value: 3
+    ModType: 0

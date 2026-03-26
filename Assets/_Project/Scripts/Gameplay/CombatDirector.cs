@@ -8,6 +8,8 @@ public class CombatDirector : MonoBehaviour
     [Header("Dependencies")]
     [SerializeField] private EnemyBullet _enemyBulletPrefab;
 
+    public float GlobalEnemySpeedMultiplier = 1.0f;
+
     private CombatSettings _currentSettings;
     private readonly List<EnemyBrain> _activeEnemies = new List<EnemyBrain>(100);
     private bool _isCombatActive = false;
@@ -26,12 +28,19 @@ public class CombatDirector : MonoBehaviour
     {
         EventBus.OnWaveStarted += HandleWaveStarted;
         EventBus.OnStageCleared += HandleStageCleared;
+        EventBus.OnGameStarted += ResetRunStats;
     }
 
     private void OnDisable()
     {
         EventBus.OnWaveStarted -= HandleWaveStarted;
         EventBus.OnStageCleared -= HandleStageCleared;
+        EventBus.OnGameStarted -= ResetRunStats;
+    }
+
+    private void ResetRunStats()
+    {
+        GlobalEnemySpeedMultiplier = 1.0f;
     }
 
     private void HandleWaveStarted(int waveIndex)
@@ -95,8 +104,8 @@ public class CombatDirector : MonoBehaviour
             EnemyBrain candidate = GetRandomEnemyInState(null);
             if (candidate != null)
             {
-                bool didShoot = candidate.TryShoot(_enemyBulletPrefab, _currentSettings.EnemyProjectileSpeed);
-
+                float finalBulletSpeed = _currentSettings.EnemyProjectileSpeed * GlobalEnemySpeedMultiplier;
+                bool didShoot = candidate.TryShoot(_enemyBulletPrefab, finalBulletSpeed);
                 if (!didShoot) _shootTimer = 0.1f;
             }
         }

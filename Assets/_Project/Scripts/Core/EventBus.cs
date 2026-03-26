@@ -7,6 +7,7 @@ public static class EventBus
     public static Action<int, int, UnityEngine.Sprite> OnPlayerHealthInitialized;
     public static Action<int> OnPlayerHit;
     public static Action OnPlayerDeath;
+    public static Action OnGameOver;
 
     // Progression Events
     public static Action OnGameStarted;
@@ -14,9 +15,11 @@ public static class EventBus
     public static Action<int> OnWaveCompleted;
     public static Action OnStageCleared;
     public static Action OnClearArena;
+    public static Action OnShopEntered;
 
     // UI or Economy Events
     public static Action<int> OnScoreChanged;
+    public static Action<UpgradeData[]> OnDraftGenerated;
 
     public static void ClearAll()
     {
@@ -29,5 +32,8 @@ public static class EventBus
         OnStageCleared = null;
         OnScoreChanged = null;
         OnClearArena = null;
+        OnGameOver = null;
+        OnShopEntered = null;
+        OnDraftGenerated = null;
     }
 }

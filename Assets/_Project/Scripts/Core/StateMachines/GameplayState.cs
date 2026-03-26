@@ -26,5 +26,17 @@ public class GameplayState : IGameState
     }
 
     public void Tick() { }
-    public void Exit() { }
+    public void Exit()
+    {
+        EventBus.OnGameOver -= HandleGameOver;
+    }
+
+    private async void HandleGameOver()
+    {
+        Debug.Log("[GameState] Processing Game Over sequence...");
+
+        await Awaitable.WaitForSecondsAsync(3.0f);
+
+        _context.ChangeState(_context.MenuState);
+    }
 }

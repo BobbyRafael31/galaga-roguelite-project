@@ -2,15 +2,19 @@ using UnityEngine;
 
 public class PlayerBullet : MonoBehaviour, IAABBEntity
 {
-    [Header("Setting")]
+    [Header("Settings")]
     [SerializeField] private float _speed = 15f;
-
-    [Tooltip("Half-width and half-height for the AABB hit detection.")]
     [SerializeField] private Vector2 _extents = new Vector2(0.1f, 0.4f);
 
     public Vector2 Position => transform.position;
-    public Vector2 Extents => _extents;
+    public Vector2 Extents => IsHeavy ? _extents * 2.5f : _extents;
     public bool IsActive => gameObject.activeInHierarchy;
+    public bool IsHeavy { get; private set; }
+
+    private Vector3 _originalScale;
+
+    private int _maxPierces = 0;
+    private int _currentPiercesLeft = 0;
 
     private Camera _mainCamera;
     private float _despawnY;
@@ -18,44 +22,56 @@ public class PlayerBullet : MonoBehaviour, IAABBEntity
     private void Awake()
     {
         _mainCamera = Camera.main;
+        _originalScale = transform.localScale;
         CalculateTopBound();
     }
 
     private void OnEnable()
     {
-        if (FastCollisionManager.Instance != null)
-            FastCollisionManager.Instance.RegisterPlayerBullet(this);
-
+        if (FastCollisionManager.Instance != null) FastCollisionManager.Instance.RegisterPlayerBullet(this);
         EventBus.OnClearArena += Despawn;
+
+        _currentPiercesLeft = _maxPierces;
     }
 
     private void OnDisable()
     {
-        if (FastCollisionManager.Instance != null)
-            FastCollisionManager.Instance.UnregisterPlayerBullet(this);
-
+        if (FastCollisionManager.Instance != null) FastCollisionManager.Instance.UnregisterPlayerBullet(this);
         EventBus.OnClearArena -= Despawn;
+    }
+
+    public void SetPiercingLevel(int pierceCount)
+    {
+        _maxPierces = pierceCount;
     }
 
     private void Update()
     {
         transform.Translate(Vector3.up * (_speed * Time.deltaTime));
-
-        if (transform.position.y > _despawnY)
-            Despawn();
+        if (transform.position.y > _despawnY) Despawn();
     }
 
     public void OnCollide(IAABBEntity other)
     {
-        Despawn();
+        if (_currentPiercesLeft > 0)
+        {
+            _currentPiercesLeft--;
+        }
+        else
+        {
+            Despawn();
+        }
+    }
+    public void SetHeavyOrdinance(bool isHeavy)
+    {
+        IsHeavy = isHeavy;
+        transform.localScale = isHeavy ? _originalScale * 2.5f : _originalScale;
     }
 
     private void Despawn()
     {
-        if (PoolManager.Instance != null)
-            PoolManager.Instance.Release(this);
-        else
-            gameObject.SetActive(false);
+        if (PoolManager.Instance != null) PoolManager.Instance.Release(this);
+        else gameObject.SetActive(false);
     }
 
     private void CalculateTopBound()
@@ -65,8 +81,7 @@ public class PlayerBullet : MonoBehaviour, IAABBEntity
             float zDistance = Mathf.Abs(_mainCamera.transform.position.z - transform.position.z);
             _despawnY = _mainCamera.ViewportToWorldPoint(new Vector3(0, 1.1f, zDistance)).y;
         }
-        else
-            _despawnY = 15f; // Fallback hardcode
+        else _despawnY = 15f;
     }
 
     private void OnDrawGizmosSelected()

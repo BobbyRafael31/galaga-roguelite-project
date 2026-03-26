@@ -18,6 +18,11 @@ public class PlayerShooter : MonoBehaviour
     public Stat MaxBulletsOnScreen { get; private set; }
     public Stat FireCooldown { get; private set; }
 
+    public int BonusPiercing = 0;
+
+    public bool HasTwinBlasters = false;
+    public bool HasHeavyOrdinance = false;
+
     private readonly List<PlayerBullet> _activeBullets = new List<PlayerBullet>(20);
     private float _lastFireTime;
 
@@ -70,22 +75,35 @@ public class PlayerShooter : MonoBehaviour
 
     private void HandleFire()
     {
-        if (_activeBullets.Count >= Mathf.FloorToInt(MaxBulletsOnScreen.Value))
-            return;
-
-        if (Time.time < _lastFireTime + FireCooldown.Value)
-            return;
+        if (_activeBullets.Count >= Mathf.FloorToInt(MaxBulletsOnScreen.Value)) return;
+        if (Time.time < _lastFireTime + FireCooldown.Value) return;
 
         _lastFireTime = Time.time;
 
-        if (PoolManager.Instance != null)
+        if (PoolManager.Instance == null) return;
+
+        if (HasTwinBlasters)
         {
-            PlayerBullet newBullet = PoolManager.Instance.Get(_bulletPrefab, _firePoint.position, Quaternion.identity);
-            _activeBullets.Add(newBullet);
+            // Fire Left Wing
+            FireSingleBullet(_firePoint.position + new Vector3(-0.4f, 0, 0));
+
+            // Fire Right Wing (Only if we haven't instantly hit the max bullet cap)
+            if (_activeBullets.Count < Mathf.FloorToInt(MaxBulletsOnScreen.Value))
+            {
+                FireSingleBullet(_firePoint.position + new Vector3(0.4f, 0, 0));
+            }
         }
         else
         {
-            Debug.LogError("[PlayerShooter] PoolManager is missing from the scene!");
+            FireSingleBullet(_firePoint.position);
         }
+    }
+
+    private void FireSingleBullet(Vector3 spawnPos)
+    {
+        PlayerBullet newBullet = PoolManager.Instance.Get(_bulletPrefab, spawnPos, Quaternion.identity);
+        newBullet.SetPiercingLevel(BonusPiercing);
+        newBullet.SetHeavyOrdinance(HasHeavyOrdinance);
+        _activeBullets.Add(newBullet);
     }
 }
