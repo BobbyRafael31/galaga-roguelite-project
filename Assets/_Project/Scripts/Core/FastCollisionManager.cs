@@ -50,7 +50,7 @@ public class FastCollisionManager : MonoBehaviour
     private void Update()
     {
         CheckPlayerBulletsVsEnemies();
-        CheckHeavyBulletsVsEnemyBullets(); // NEW
+        CheckHeavyBulletsVsEnemyBullets();
 
         if (_player as MonoBehaviour != null && _player.IsActive)
         {
@@ -88,7 +88,6 @@ public class FastCollisionManager : MonoBehaviour
 
     private void CheckHeavyBulletsVsEnemyBullets()
     {
-        // Iterates backwards for safe removal
         for (int i = _playerBullets.Count - 1; i >= 0; i--)
         {
             var pBullet = _playerBullets[i] as PlayerBullet;
@@ -101,11 +100,7 @@ public class FastCollisionManager : MonoBehaviour
 
                 if (CheckAABB(pBullet, eBullet))
                 {
-                    // The enemy bullet is vaporized mid-air
                     eBullet.OnCollide(pBullet);
-
-                    // Note: We do NOT call pBullet.OnCollide() here,
-                    // which means the Heavy Bullet keeps flying untouched
                 }
             }
         }
