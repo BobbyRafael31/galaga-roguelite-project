@@ -72,6 +72,8 @@ public class GameStateManager : MonoBehaviour
 
     public void OnLeaveShopClicked()
     {
+
+        PlayState.SetResumeFlag(true);
         ChangeState(PlayState);
     }
 

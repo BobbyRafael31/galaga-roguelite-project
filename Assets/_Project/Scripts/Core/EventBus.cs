@@ -8,6 +8,7 @@ public static class EventBus
     public static Action<int> OnPlayerHit;
     public static Action OnPlayerDeath;
     public static Action OnGameOver;
+    public static Action OnMainMenuEntered;
 
     // Progression Events
     public static Action OnGameStarted;
@@ -16,10 +17,16 @@ public static class EventBus
     public static Action OnStageCleared;
     public static Action OnClearArena;
     public static Action OnShopEntered;
+    public static System.Action<string> OnProgressionChanged;
 
     // UI or Economy Events
     public static Action<int> OnScoreChanged;
     public static Action<UpgradeData[]> OnDraftGenerated;
+
+    // Boss UI Events
+    public static Action<string, float, float> OnBossSpawned;
+    public static Action<float> OnBossHealthChanged;
+    public static Action OnBossDefeated;
 
     public static void ClearAll()
     {
@@ -35,5 +42,10 @@ public static class EventBus
         OnGameOver = null;
         OnShopEntered = null;
         OnDraftGenerated = null;
+        OnProgressionChanged = null;
+        OnMainMenuEntered = null;
+        OnBossSpawned = null;
+        OnBossHealthChanged = null;
+        OnBossDefeated = null;
     }
 }

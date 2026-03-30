@@ -2,11 +2,6 @@ using UnityEngine;
 
 public class WaveSpawner : MonoBehaviour
 {
-    [Header("Stage Configuration")]
-    [SerializeField] private StageData _currentStage;
-    [Tooltip("If true, starts the stage automatically for testing.")]
-    [SerializeField] private bool _startOnAwake = false;
-
     [Header("Dependencies")]
     [Tooltip("A fallback spawn point far off-screen.")]
     [SerializeField] private Vector3 _offScreenSpawnPoint = new Vector3(0, 15, 0);
@@ -18,19 +13,12 @@ public class WaveSpawner : MonoBehaviour
     private void OnEnable()
     {
         EventBus.OnEnemyDestroyed += HandleEnemyDestroyed;
-
-        if (!_startOnAwake) EventBus.OnGameStarted += StartStageSequence;
     }
+
 
     private void OnDisable()
     {
         EventBus.OnEnemyDestroyed -= HandleEnemyDestroyed;
-        EventBus.OnGameStarted -= StartStageSequence;
-    }
-
-    private void Start()
-    {
-        if (_startOnAwake) StartStageSequence();
     }
 
     private void HandleEnemyDestroyed(int scoreValue)
@@ -93,22 +81,27 @@ public class WaveSpawner : MonoBehaviour
         _activeSpawners = Mathf.Max(0, _activeSpawners - 1);
     }
 
-    public async void StartStageSequence()
+    public async void StartStageSequence(StageData stageToPlay)
     {
-        if (_isStageRunning || _currentStage == null) return;
+        if (_isStageRunning || stageToPlay == null) return;
         _isStageRunning = true;
 
-        Debug.Log($"[WaveSpawner] Stage Started: {_currentStage.Waves.Count} Waves.");
+        Debug.Log($"[WaveSpawner] Stage Started: {stageToPlay.Waves.Count} Waves.");
 
-        for (int w = 0; w < _currentStage.Waves.Count; w++)
+        for (int w = 0; w < stageToPlay.Waves.Count; w++)
         {
-            WaveData wave = _currentStage.Waves[w];
+            WaveData wave = stageToPlay.Waves[w];
             await SpawnWaveAsync(wave, w);
+
+            if (!_isStageRunning) return;
         }
 
-        Debug.Log("[WaveSpawner] Stage Cleared!");
-        EventBus.OnStageCleared?.Invoke();
-        _isStageRunning = false;
+        if (_isStageRunning)
+        {
+            Debug.Log("[WaveSpawner] Stage Cleared!");
+            EventBus.OnStageCleared?.Invoke();
+            _isStageRunning = false;
+        }
     }
 
     private async Awaitable SpawnWaveAsync(WaveData wave, int waveIndex)
@@ -125,25 +118,32 @@ public class WaveSpawner : MonoBehaviour
             CombatDirector.Instance.SetAggression(wave.Aggression);
         }
 
-
         _activeEnemiesInWave = 0;
         _activeSpawners = 0;
+
+        if (wave.BossEncounter != null && wave.BossEncounter.BossPrefab != null)
+        {
+            Vector3 bossSpawnPos = new Vector3(0, 15, 0);
+            BossBrain boss = Instantiate(wave.BossEncounter.BossPrefab, bossSpawnPos, Quaternion.identity);
+            boss.Initialize(wave.BossEncounter);
+
+            _activeEnemiesInWave++;
+        }
 
         foreach (BatchData batch in wave.Batches)
         {
             _activeSpawners++;
-
-
             _ = SpawnBatchAsync(batch);
         }
 
-        while (_activeSpawners > 0 || _activeEnemiesInWave > 0)
+        while ((_activeSpawners > 0 || _activeEnemiesInWave > 0) && _isStageRunning)
         {
             await Awaitable.NextFrameAsync();
         }
 
+        if (!_isStageRunning) return;
+
         EventBus.OnWaveCompleted?.Invoke(waveIndex);
         await Awaitable.WaitForSecondsAsync(1.5f);
     }
-
 }

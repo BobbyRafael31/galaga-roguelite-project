@@ -17,6 +17,8 @@ public class WaveData : ScriptableObject
 {
     public FormationData Formation;
 
+    public BossEncounterData BossEncounter;
+
     public CombatSettings Aggression = new CombatSettings
     {
         MaxActiveDives = 2,

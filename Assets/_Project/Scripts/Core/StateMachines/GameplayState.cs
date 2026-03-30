@@ -3,11 +3,27 @@ using UnityEngine;
 public class GameplayState : IGameState
 {
     private GameStateManager _context;
+    private bool _isResumingFromShop = false;
 
     public GameplayState(GameStateManager context) => _context = context;
 
+    public void SetResumeFlag(bool isResuming) => _isResumingFromShop = isResuming;
+
     public async void Enter()
     {
+        EventBus.OnGameOver += HandleGameOver;
+
+        if (_isResumingFromShop)
+        {
+            _isResumingFromShop = false;
+
+            StageData nextStage = LevelDirector.Instance.GetNextStage();
+            if (nextStage != null)
+            {
+                _context.WaveSpawner.StartStageSequence(nextStage);
+            }
+            return;
+        }
         _context.IsTransitioning = true;
 
         EventBus.OnClearArena?.Invoke();
@@ -22,7 +38,9 @@ public class GameplayState : IGameState
         if (ScreenFader.Instance != null) await ScreenFader.Instance.FadeToClear(0.8f);
 
         _context.IsTransitioning = false;
-        _context.WaveSpawner.StartStageSequence();
+
+        StageData firstStage = LevelDirector.Instance.GetNextStage();
+        if (firstStage != null) _context.WaveSpawner.StartStageSequence(firstStage);
     }
 
     public void Tick() { }
@@ -34,6 +52,8 @@ public class GameplayState : IGameState
     private async void HandleGameOver()
     {
         Debug.Log("[GameState] Processing Game Over sequence...");
+
+        _context.WaveSpawner.StopAndReset();
 
         await Awaitable.WaitForSecondsAsync(3.0f);
 

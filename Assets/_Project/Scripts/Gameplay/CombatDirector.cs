@@ -29,6 +29,7 @@ public class CombatDirector : MonoBehaviour
         EventBus.OnWaveStarted += HandleWaveStarted;
         EventBus.OnStageCleared += HandleStageCleared;
         EventBus.OnGameStarted += ResetRunStats;
+        EventBus.OnMainMenuEntered += ResetRunStats;
     }
 
     private void OnDisable()
@@ -36,6 +37,7 @@ public class CombatDirector : MonoBehaviour
         EventBus.OnWaveStarted -= HandleWaveStarted;
         EventBus.OnStageCleared -= HandleStageCleared;
         EventBus.OnGameStarted -= ResetRunStats;
+        EventBus.OnMainMenuEntered -= ResetRunStats;
     }
 
     private void ResetRunStats()

@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af72912e728699f41a0ba7d3aa482dcd, type: 3}
+  m_Name: Boss_AlienDreadnought
+  m_EditorClassIdentifier: Assembly-CSharp::BossEncounterData
+  BossName: Mothership
+  BossPrefab: {fileID: 6861995247178782487, guid: 13e6156737e6c8d4f9cdbe16a4158e92, type: 3}
+  MaxHealth: 100
+  ScoreValue: 5000
+  AttackPatterns:
+  - {fileID: 11400000, guid: 79d30873f3f1b4d4e9ffde5f4b2e152a, type: 2}

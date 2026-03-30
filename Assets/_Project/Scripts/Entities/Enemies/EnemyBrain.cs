@@ -90,6 +90,9 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
         _previousPosition = transform.position;
         transform.rotation = Quaternion.identity;
 
+        float loopHpMult = LevelDirector.Instance != null ? LevelDirector.Instance.EnemyHealthMultiplier : 1f;
+        _currentHealth = _maxHealth * loopHpMult;
+
         if (_mainCamera != null) _cameraZDistance = Mathf.Abs(_mainCamera.transform.position.z - transform.position.z);
         if (FastCollisionManager.Instance != null) FastCollisionManager.Instance.RegisterEnemy(this);
         if (CombatDirector.Instance != null) CombatDirector.Instance.RegisterEnemy(this);
@@ -350,7 +353,12 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
     {
         _isDead = true;
         if (_currentState == EnemyState.Dive && CombatDirector.Instance != null) CombatDirector.Instance.ReportDiveCompleted();
-        EventBus.OnEnemyDestroyed?.Invoke(_scoreValue);
+
+        // Apply Infinite Loop Multiplier to Score
+        float loopScoreMult = LevelDirector.Instance != null ? LevelDirector.Instance.EnemyScoreMultiplier : 1f;
+        int finalScore = Mathf.FloorToInt(_scoreValue * loopScoreMult);
+
+        EventBus.OnEnemyDestroyed?.Invoke(finalScore);
 
         if (PoolManager.Instance != null) PoolManager.Instance.Release(this);
         else gameObject.SetActive(false);

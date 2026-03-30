@@ -13,6 +13,13 @@ MonoBehaviour:
   m_Name: Wave_1_Opening
   m_EditorClassIdentifier: Assembly-CSharp::WaveData
   Formation: {fileID: 11400000, guid: 9423c2fc1a0e49b4a90bc97cd6303120, type: 2}
+  BossEncounter: {fileID: 11400000, guid: 2703874428b9acd4f8831fee7ca5b683, type: 2}
+  Aggression:
+    MaxActiveDives: 2
+    DiveTokenCooldown: 3
+    MaxActiveProjectiles: 3
+    ShootTokenCooldown: 1.5
+    EnemyProjectileSpeed: 6
   Batches:
   - EnemyPrefab: {fileID: 7261794033678125607, guid: 9c9c75cd830846a428c7e50c645892e8, type: 3}
     EntrancePath: {fileID: 11400000, guid: abcc25b956feae04a8b3841f69def8a4, type: 2}

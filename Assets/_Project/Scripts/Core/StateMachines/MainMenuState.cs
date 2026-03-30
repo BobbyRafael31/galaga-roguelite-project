@@ -13,6 +13,8 @@ public class MainMenuState : IGameState
         _context.MainMenuUI.SetActive(true);
         EventBus.OnPlayerDeath += HandleDummyDeath;
 
+        EventBus.OnMainMenuEntered?.Invoke();
+
         _ = RunDemoLoopAsync();
     }
 

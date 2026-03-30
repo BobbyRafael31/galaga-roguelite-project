@@ -11,8 +11,9 @@ public class EnemyBullet : MonoBehaviour, IAABBEntity
     public Vector2 Extents => _extents;
     public bool IsActive => gameObject.activeInHierarchy;
 
-    private Camera _mainCamera;
     private float _despawnY;
+    private Camera _mainCamera;
+    private Vector3 _flightDirection = Vector3.down;
 
     private void Awake()
     {
@@ -40,13 +41,20 @@ public class EnemyBullet : MonoBehaviour, IAABBEntity
     {
         _speed = newSpeed;
     }
+    public void SetSpeedAndDirection(float newSpeed, Vector3 direction)
+    {
+        _speed = newSpeed;
+        _flightDirection = direction.normalized;
+    }
 
     private void Update()
     {
-        transform.Translate(Vector3.down * (_speed * Time.deltaTime));
+        transform.Translate(_flightDirection * (_speed * Time.deltaTime), Space.World);
 
         if (transform.position.y < _despawnY)
+        {
             Despawn();
+        }
     }
 
     public void OnCollide(IAABBEntity other)
