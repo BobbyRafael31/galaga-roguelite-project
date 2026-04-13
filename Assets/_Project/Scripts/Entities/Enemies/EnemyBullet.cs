@@ -11,30 +11,35 @@ public class EnemyBullet : MonoBehaviour, IAABBEntity
     public Vector2 Extents => _extents;
     public bool IsActive => gameObject.activeInHierarchy;
 
-    private float _despawnY;
-    private Camera _mainCamera;
     private Vector3 _flightDirection = Vector3.down;
 
-    private void Awake()
-    {
-        _mainCamera = Camera.main;
-        CalculateBottomBound();
-    }
+    public bool IsIndestructible = false;
+    public bool IsBossProjectile = false;
 
     private void OnEnable()
     {
-        if (FastCollisionManager.Instance != null)
-            FastCollisionManager.Instance.RegisterEnemyBullet(this);
+        if (FastCollisionManager.Instance != null) FastCollisionManager.Instance.RegisterEnemyBullet(this);
 
         EventBus.OnClearArena += Despawn;
+        EventBus.OnBossDefeated += HandleBossDefeated;
+
+        _flightDirection = Vector3.down;
     }
 
     private void OnDisable()
     {
-        if (FastCollisionManager.Instance != null)
-            FastCollisionManager.Instance.UnregisterEnemyBullet(this);
+        if (FastCollisionManager.Instance != null) FastCollisionManager.Instance.UnregisterEnemyBullet(this);
 
         EventBus.OnClearArena -= Despawn;
+        EventBus.OnBossDefeated -= HandleBossDefeated;
+    }
+
+    private void HandleBossDefeated()
+    {
+        if (IsBossProjectile)
+        {
+            Despawn();
+        }
     }
 
     public void SetSpeed(float newSpeed)
@@ -51,10 +56,7 @@ public class EnemyBullet : MonoBehaviour, IAABBEntity
     {
         transform.Translate(_flightDirection * (_speed * Time.deltaTime), Space.World);
 
-        if (transform.position.y < _despawnY)
-        {
-            Despawn();
-        }
+        if (transform.position.y < ArenaBounds.MinY - 1f) Despawn();
     }
 
     public void OnCollide(IAABBEntity other)
@@ -68,19 +70,6 @@ public class EnemyBullet : MonoBehaviour, IAABBEntity
             PoolManager.Instance.Release(this);
         else
             gameObject.SetActive(false);
-    }
-
-    private void CalculateBottomBound()
-    {
-        if (_mainCamera != null)
-        {
-            float zDistance = Mathf.Abs(_mainCamera.transform.position.z - transform.position.z);
-            _despawnY = _mainCamera.ViewportToWorldPoint(new Vector3(0, -0.1f, zDistance)).y;
-        }
-        else
-        {
-            _despawnY = -15f;
-        }
     }
 
     private void OnDrawGizmosSelected()

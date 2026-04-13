@@ -19,6 +19,9 @@ public class PlayerController : MonoBehaviour
     private float _maxBoundsX;
     private Camera _mainCamera;
 
+    private StatModifier _jammingModifier;
+    private float _jammingEndTime;
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
@@ -38,6 +41,13 @@ public class PlayerController : MonoBehaviour
         {
             Debug.LogError("[PlayerController] InputReader is not assigned in the Inspector!");
         }
+
+        if(_jammingModifier != null)
+        {
+            MoveSpeed.RemoveModifier(_jammingModifier);
+             _jammingModifier = null;
+        }
+
     }
 
     private void OnDisable()
@@ -70,9 +80,35 @@ public class PlayerController : MonoBehaviour
         float deltaX = directionX * MoveSpeed.Value * Time.deltaTime;
         float targetX = currentPos.x + deltaX;
 
-        targetX = Mathf.Clamp(targetX, _minBoundsX + _shipHalfWidth, _maxBoundsX - _shipHalfWidth);
+        targetX = Mathf.Clamp(targetX, ArenaBounds.MinX + _shipHalfWidth, ArenaBounds.MaxX - _shipHalfWidth);
 
         transform.position = new Vector3(targetX, currentPos.y, currentPos.z);
+    }
+
+    public async void ApplyTemporalJamming(float speedMultiplier, float duration)
+    {
+        _jammingEndTime = Time.time + duration;
+
+        if (_jammingModifier == null)
+        {
+            _jammingModifier = new StatModifier(speedMultiplier, StatModType.PercentMult, this);
+            MoveSpeed.AddModifier(_jammingModifier);
+
+            Debug.Log($"[PlayerController] TEMPORAL JAMMING ACTIVE! Speed reduced by {speedMultiplier * 100}%.");
+
+            while (Time.time < _jammingEndTime)
+            {
+                if (this == null || !gameObject.activeInHierarchy) break;
+                await Awaitable.NextFrameAsync();
+            }
+
+            if (_jammingModifier != null)
+            {
+                MoveSpeed.RemoveModifier(_jammingModifier);
+                _jammingModifier = null;
+                Debug.Log("[PlayerController] Temporal Jamming faded. Speed restored.");
+            }
+        }
     }
 
     private void CalculateScreenBounds()
@@ -104,8 +140,8 @@ public class PlayerController : MonoBehaviour
         if (Application.isPlaying)
         {
             Gizmos.color = Color.blue;
-            Vector3 leftClamp = new Vector3(_minBoundsX + _shipHalfWidth, transform.position.y, transform.position.z);
-            Vector3 rightClamp = new Vector3(_maxBoundsX - _shipHalfWidth, transform.position.y, transform.position.z);
+            Vector3 leftClamp = new Vector3(ArenaBounds.MinX + _shipHalfWidth, transform.position.y, transform.position.z);
+            Vector3 rightClamp = new Vector3(ArenaBounds.MaxX - _shipHalfWidth, transform.position.y, transform.position.z);
 
             Gizmos.DrawLine(leftClamp + Vector3.up * 2, leftClamp + Vector3.down * 2);
             Gizmos.DrawLine(rightClamp + Vector3.up * 2, rightClamp + Vector3.down * 2);

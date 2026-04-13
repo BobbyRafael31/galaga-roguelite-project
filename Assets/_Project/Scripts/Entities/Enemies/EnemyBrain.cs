@@ -39,6 +39,8 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
     public Vector2 Position => transform.position;
     public Vector2 Extents => _extents;
     public bool IsActive => gameObject.activeInHierarchy && !_isDead && Time.time > _spawnTime + _spawnInvulnerability;
+    public int AssignedRow => _assignedRow;
+    public int AssignedCol => _assignedCol;
     public EnemyState CurrentState => _currentState;
 
     private EnemyState _currentState;
@@ -71,10 +73,19 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
     private Vector3 _loopCurrentDir;
     private float _currentLoopTurnSpeed;
 
+    private int _originalScoreValue;
+    private Color _originalColor;
+    private bool _isHollow = false;
+    private SpriteRenderer _spriteRenderer;
+
     private void Awake()
     {
         _originalPoolParent = transform.parent;
         _mainCamera = Camera.main;
+
+        _originalScoreValue = _scoreValue;
+        _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        if (_spriteRenderer != null) _originalColor = _spriteRenderer.color;
     }
 
     private void OnEnable()
@@ -90,14 +101,15 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
         _previousPosition = transform.position;
         transform.rotation = Quaternion.identity;
 
-        float loopHpMult = LevelDirector.Instance != null ? LevelDirector.Instance.EnemyHealthMultiplier : 1f;
-        _currentHealth = _maxHealth * loopHpMult;
+        _isHollow = false;
+        _scoreValue = _originalScoreValue;
+        if (_spriteRenderer != null) _spriteRenderer.color = _originalColor;
 
         if (_mainCamera != null) _cameraZDistance = Mathf.Abs(_mainCamera.transform.position.z - transform.position.z);
         if (FastCollisionManager.Instance != null) FastCollisionManager.Instance.RegisterEnemy(this);
         if (CombatDirector.Instance != null) CombatDirector.Instance.RegisterEnemy(this);
 
-        EventBus.OnClearArena += Die;
+        EventBus.OnClearArena += ForceDespawn;
     }
 
     private void OnDisable()
@@ -106,7 +118,20 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
         if (CombatDirector.Instance != null) CombatDirector.Instance.UnregisterEnemy(this);
         if (_originalPoolParent != null) transform.SetParent(_originalPoolParent);
 
-        EventBus.OnClearArena -= Die;
+        EventBus.OnClearArena -= ForceDespawn;
+    }
+
+    public void SetHollow(bool isHollow)
+    {
+        _isHollow = isHollow;
+        if (isHollow)
+        {
+            _scoreValue = 0;
+            if (_spriteRenderer != null)
+            {
+                _spriteRenderer.color = new Color(_originalColor.r, _originalColor.g, _originalColor.b, 0.5f);
+            }
+        }
     }
 
     public void InitializeFormationSeat(int row, int col, PathData path)
@@ -188,16 +213,20 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
         _currentState = EnemyState.Dive;
         _isLockedInFormation = false;
 
-        _targetLoops = Random.Range(0, 3);
+        float distToPlayer = 10f;
+        if (PlayerController.Instance != null) distToPlayer = Vector3.Distance(transform.position, PlayerController.Instance.transform.position);
 
+        _targetLoops = Random.Range(0, 3);
         _swerveTime = 0f;
         _swerveAmp = Random.Range(30f, 60f);
         _swerveFreq = Random.Range(2f, 3.5f);
         _divePhaseTimer = 0f;
-
         _currentLoopTurnSpeed = Random.Range(250f, 600f);
 
         _diveTurnDirection = transform.position.x > 0 ? 1f : -1f;
+
+        if (transform.position.x > ArenaBounds.MaxX - 3f) _diveTurnDirection = -1f; // Force Left
+        else if (transform.position.x < ArenaBounds.MinX + 3f) _diveTurnDirection = 1f; // Force Right
 
         if (isFromEntrance)
         {
@@ -238,7 +267,6 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
                 Vector3 baseDir = (playerPos - transform.position).normalized;
                 if (baseDir.y > -0.2f) baseDir = new Vector3(baseDir.x, -1f, 0).normalized;
 
-
                 float sOffset = Mathf.Cos(_swerveTime * _swerveFreq) * _swerveAmp * _diveTurnDirection;
                 Vector3 targetSwerveDir = Quaternion.Euler(0, 0, sOffset) * baseDir;
 
@@ -249,6 +277,15 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
                     _currentDivePhase = DivePhase.Looping;
                     _accumulatedLoopAngle = 0f;
                     _loopCurrentDir = _diveVelocity.normalized;
+
+                    if (transform.position.x < ArenaBounds.MinX + 2f || transform.position.x > ArenaBounds.MaxX - 2f)
+                    {
+                        _currentLoopTurnSpeed = Random.Range(600f, 850f);
+                    }
+                    else
+                    {
+                        _currentLoopTurnSpeed = Random.Range(250f, 450f);
+                    }
                 }
                 else if (distToPlayerY < 4.5f)
                 {
@@ -256,11 +293,10 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
                 }
                 break;
 
-           case DivePhase.Looping:
+            case DivePhase.Looping:
                 float turnStep = _currentLoopTurnSpeed * dt;
 
                 _loopCurrentDir = Quaternion.Euler(0, 0, turnStep * _diveTurnDirection) * _loopCurrentDir;
-
                 _diveVelocity = (_loopCurrentDir + (Vector3.down * 0.2f)).normalized * ActiveMoveSpeed;
 
                 _accumulatedLoopAngle += turnStep;
@@ -286,25 +322,23 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
                 break;
         }
 
+        // CRITICAL FIX: Removed the hard X clamp.
+        // Enemies are allowed to visually break the border momentarily, but the dynamic
+        // loop radius and Homing phase will naturally pull them back into the playable arena.
         transform.position += _diveVelocity * dt;
+
         CheckOffScreen();
     }
+
     private void CheckOffScreen()
     {
-        if (_mainCamera != null)
-        {
-            float bottomY = _mainCamera.ViewportToWorldPoint(new Vector3(0, -0.1f, _cameraZDistance)).y;
-            if (transform.position.y < bottomY) _currentState = EnemyState.WrapAround;
-        }
+        if (transform.position.y < ArenaBounds.MinY - 1f) _currentState = EnemyState.WrapAround;
     }
 
     private void HandleWrapAroundState()
     {
-        if (_mainCamera != null)
-        {
-            float topY = _mainCamera.ViewportToWorldPoint(new Vector3(0, 1.1f, _cameraZDistance)).y;
-            transform.position = new Vector3(transform.position.x, topY, transform.position.z);
-        }
+        // Teleport to 1.5 units above the arena to smoothly fly back in
+        transform.position = new Vector3(transform.position.x, ArenaBounds.MaxY + 1.5f, transform.position.z);
         _currentState = EnemyState.Return;
     }
 
@@ -349,16 +383,27 @@ public class EnemyBrain : MonoBehaviour, IAABBEntity
         if (_currentHealth <= 0) Die();
     }
 
+    private void ForceDespawn()
+    {
+        _isDead = true;
+
+        if (_currentState == EnemyState.Dive && CombatDirector.Instance != null)
+        {
+            CombatDirector.Instance.ReportDiveCompleted();
+        }
+
+        if (PoolManager.Instance != null) PoolManager.Instance.Release(this);
+        else gameObject.SetActive(false);
+    }
+
     private void Die()
     {
         _isDead = true;
         if (_currentState == EnemyState.Dive && CombatDirector.Instance != null) CombatDirector.Instance.ReportDiveCompleted();
 
-        // Apply Infinite Loop Multiplier to Score
         float loopScoreMult = LevelDirector.Instance != null ? LevelDirector.Instance.EnemyScoreMultiplier : 1f;
-        int finalScore = Mathf.FloorToInt(_scoreValue * loopScoreMult);
 
-        EventBus.OnEnemyDestroyed?.Invoke(finalScore);
+        EventBus.OnEnemyDestroyed?.Invoke(Mathf.FloorToInt(_scoreValue * loopScoreMult));
 
         if (PoolManager.Instance != null) PoolManager.Instance.Release(this);
         else gameObject.SetActive(false);

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BossEncounterData
   BossName: Mothership
   BossPrefab: {fileID: 6861995247178782487, guid: 13e6156737e6c8d4f9cdbe16a4158e92, type: 3}
-  MaxHealth: 100
+  MaxHealth: 10
   ScoreValue: 5000
   AttackPatterns:
   - {fileID: 11400000, guid: 79d30873f3f1b4d4e9ffde5f4b2e152a, type: 2}

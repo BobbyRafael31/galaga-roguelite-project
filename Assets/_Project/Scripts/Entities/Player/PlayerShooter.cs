@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class PlayerShooter : MonoBehaviour
 {
+    public static PlayerShooter Instance { get; private set; }
+
+
     [Header("Dependencies")]
     [SerializeField] private InputReader _inputReader;
     [SerializeField] private PlayerBullet _bulletPrefab;
@@ -26,8 +29,13 @@ public class PlayerShooter : MonoBehaviour
     private readonly List<PlayerBullet> _activeBullets = new List<PlayerBullet>(20);
     private float _lastFireTime;
 
+    private float _empEndTime = -999f;
+
     private void Awake()
     {
+        Instance = this;
+
+
         MaxBulletsOnScreen = new Stat(_baseMaxBulletsOnScreen);
         FireCooldown = new Stat(_baseFireCooldown);
     }
@@ -47,6 +55,8 @@ public class PlayerShooter : MonoBehaviour
         {
             _inputReader.OnFireEvent += HandleFire;
         }
+
+        _empEndTime = -999f;
     }
 
     private void OnDisable()
@@ -73,8 +83,16 @@ public class PlayerShooter : MonoBehaviour
         }
     }
 
+    public void ApplyEMP(float duration)
+    {
+        _empEndTime = Time.time + duration;
+        Debug.Log($"[PlayerShooter] EMP ACTIVE! Weapons offline for {duration} seconds.");
+    }
+
     private void HandleFire()
     {
+        if (Time.time < _empEndTime) return;
+
         if (_activeBullets.Count >= Mathf.FloorToInt(MaxBulletsOnScreen.Value)) return;
         if (Time.time < _lastFireTime + FireCooldown.Value) return;
 
@@ -84,10 +102,8 @@ public class PlayerShooter : MonoBehaviour
 
         if (HasTwinBlasters)
         {
-            // Fire Left Wing
             FireSingleBullet(_firePoint.position + new Vector3(-0.4f, 0, 0));
 
-            // Fire Right Wing (Only if we haven't instantly hit the max bullet cap)
             if (_activeBullets.Count < Mathf.FloorToInt(MaxBulletsOnScreen.Value))
             {
                 FireSingleBullet(_firePoint.position + new Vector3(0.4f, 0, 0));

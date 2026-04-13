@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FormationData
   Rows: 6
   Columns: 6
-  CellWidth: 3
-  CellHeight: 2
+  CellWidth: 1.5
+  CellHeight: 1.5
   Type: 2
   SwaySpeed: 2
   SwayAmplitude: 0.5

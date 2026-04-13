@@ -16,23 +16,15 @@ public class DummyBot : MonoBehaviour, IAABBEntity
     public bool IsActive => gameObject.activeInHierarchy;
 
     private float _nextFireTime;
-    private Camera _mainCamera;
-    private float _minBoundsX;
-    private float _maxBoundsX;
+
 
     private readonly List<PlayerBullet> _activeBullets = new List<PlayerBullet>(10);
-
-    private void Awake()
-    {
-        _mainCamera = Camera.main;
-    }
 
     private void OnEnable()
     {
         if (FastCollisionManager.Instance != null) FastCollisionManager.Instance.RegisterPlayer(this);
         EventBus.OnClearArena += Despawn;
 
-        CalculateScreenBounds();
         _activeBullets.Clear();
     }
 
@@ -49,7 +41,8 @@ public class DummyBot : MonoBehaviour, IAABBEntity
         float targetX = CalculateAITargetX();
 
         float newX = Mathf.MoveTowards(transform.position.x, targetX, _moveSpeed * Time.deltaTime);
-        newX = Mathf.Clamp(newX, _minBoundsX + 0.5f, _maxBoundsX - 0.5f);
+
+        newX = Mathf.Clamp(newX, ArenaBounds.MinX + 0.5f, ArenaBounds.MaxX - 0.5f);
         transform.position = new Vector3(newX, transform.position.y, 0);
 
         if (Time.time >= _nextFireTime && _activeBullets.Count < _maxBulletsOnScreen)
@@ -113,14 +106,6 @@ public class DummyBot : MonoBehaviour, IAABBEntity
         if (foundTarget) return optimalTargetX;
 
         return 0f;
-    }
-
-    private void CalculateScreenBounds()
-    {
-        if (_mainCamera == null) return;
-        float zDistance = Mathf.Abs(_mainCamera.transform.position.z - transform.position.z);
-        _minBoundsX = _mainCamera.ViewportToWorldPoint(new Vector3(0, 0, zDistance)).x;
-        _maxBoundsX = _mainCamera.ViewportToWorldPoint(new Vector3(1, 0, zDistance)).x;
     }
 
     public void OnCollide(IAABBEntity other)

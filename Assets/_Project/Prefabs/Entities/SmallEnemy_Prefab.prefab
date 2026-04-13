@@ -78,11 +78,11 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -1160703885
+  m_SortingLayer: -1
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  m_Sprite: {fileID: -2260674271888982812, guid: 077a883c37c5d364e91b61446a39de12, type: 3}
   m_Color: {r: 1, g: 0.8172076, b: 0, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -106,7 +106,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBrain
   _moveSpeed: 10
   _formationSnapSpeed: 10
-  DivePath: {fileID: 11400000, guid: e50d911eead6a7b41bc73b743386f9d2, type: 2}
+  _homingTurnSpeed: 3
   _maxHealth: 1
   _scoreValue: 100
   _spawnInvulnerability: 1

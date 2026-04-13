@@ -58,9 +58,16 @@ public class CombatDirector : MonoBehaviour
     public void SetAggression(CombatSettings settings)
     {
         _currentSettings = settings;
+
+        if (_currentSettings.MaxActiveProjectiles <= 0) _currentSettings.MaxActiveProjectiles = 3;
+        if (_currentSettings.EnemyProjectileSpeed <= 0f) _currentSettings.EnemyProjectileSpeed = 6f;
+        if (_currentSettings.ShootTokenCooldown <= 0f) _currentSettings.ShootTokenCooldown = 1.5f;
+        if (_currentSettings.MaxActiveDives <= 0) _currentSettings.MaxActiveDives = 2;
+        if (_currentSettings.DiveTokenCooldown <= 0f) _currentSettings.DiveTokenCooldown = 3f;
+
         _isCombatActive = true;
-        _diveTimer = settings.DiveTokenCooldown;
-        _shootTimer = settings.ShootTokenCooldown;
+        _diveTimer = _currentSettings.DiveTokenCooldown;
+        _shootTimer = _currentSettings.ShootTokenCooldown;
     }
 
     public void RegisterEnemy(EnemyBrain enemy) => _activeEnemies.Add(enemy);
@@ -96,7 +103,7 @@ public class CombatDirector : MonoBehaviour
 
     private void HandleShootRaffle()
     {
-        if (FastCollisionManager.Instance.GetEnemyBulletCount() >= _currentSettings.MaxActiveProjectiles) return;
+        if (FastCollisionManager.Instance.GetStandardEnemyBulletCount() >= _currentSettings.MaxActiveProjectiles) return;
 
         _shootTimer -= Time.deltaTime;
         if (_shootTimer <= 0)
@@ -108,6 +115,7 @@ public class CombatDirector : MonoBehaviour
             {
                 float finalBulletSpeed = _currentSettings.EnemyProjectileSpeed * GlobalEnemySpeedMultiplier;
                 bool didShoot = candidate.TryShoot(_enemyBulletPrefab, finalBulletSpeed);
+
                 if (!didShoot) _shootTimer = 0.1f;
             }
         }

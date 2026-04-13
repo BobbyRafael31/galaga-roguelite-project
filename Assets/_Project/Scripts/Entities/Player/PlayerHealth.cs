@@ -68,6 +68,8 @@ public class PlayerHealth : MonoBehaviour, IAABBEntity
 
     public void OnCollide(IAABBEntity other)
     {
+        if (other is DebuffProjectile) return;
+
         if (IsInvincible || _isDead) return;
         TakeDamage(1f);
     }

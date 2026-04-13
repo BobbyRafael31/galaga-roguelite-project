@@ -18,6 +18,10 @@ public class FastCollisionManager : MonoBehaviour
     private readonly List<IAABBEntity> _enemyBullets = new List<IAABBEntity>(500);
 
     private IAABBEntity _player;
+    private int _standardEnemyBulletCount = 0;
+    public int GetStandardEnemyBulletCount() => _standardEnemyBulletCount;
+
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
@@ -39,8 +43,20 @@ public class FastCollisionManager : MonoBehaviour
 
     public void RegisterEnemy(IAABBEntity enemy) => _enemies.Add(enemy);
     public void UnregisterEnemy(IAABBEntity enemy) => _enemies.Remove(enemy);
-    public void RegisterEnemyBullet(IAABBEntity bullet) => _enemyBullets.Add(bullet);
-    public void UnregisterEnemyBullet(IAABBEntity bullet) => _enemyBullets.Remove(bullet);
+
+    public void RegisterEnemyBullet(IAABBEntity bullet)
+    {
+        _enemyBullets.Add(bullet);
+        if (bullet is EnemyBullet eb && !eb.IsBossProjectile) _standardEnemyBulletCount++;
+    }
+
+    public void UnregisterEnemyBullet(IAABBEntity bullet)
+    {
+        _enemyBullets.Remove(bullet);
+        if (bullet is EnemyBullet eb && !eb.IsBossProjectile) _standardEnemyBulletCount--;
+
+        _standardEnemyBulletCount = Mathf.Max(0, _standardEnemyBulletCount);
+    }
 
     public int GetEnemyBulletCount() => _enemyBullets.Count;
 
@@ -97,6 +113,11 @@ public class FastCollisionManager : MonoBehaviour
             {
                 var eBullet = _enemyBullets[j];
                 if (!eBullet.IsActive) continue;
+
+                if (eBullet is EnemyBullet normalEnemyBullet && normalEnemyBullet.IsIndestructible)
+                {
+                    continue;
+                }
 
                 if (CheckAABB(pBullet, eBullet))
                 {

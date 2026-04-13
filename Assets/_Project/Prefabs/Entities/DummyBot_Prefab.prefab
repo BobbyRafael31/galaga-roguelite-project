@@ -110,8 +110,8 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -1160703885
+  m_SortingLayer: -1
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
@@ -138,5 +138,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DummyBot
   _moveSpeed: 5
   _fireRate: 0.2
+  _maxBulletsOnScreen: 2
   _bulletPrefab: {fileID: 9060619374156824464, guid: a9b4ea4fd769d8a42a1c0e6bad70f42a, type: 3}
   _firePoint: {fileID: 3730141824370738840}
+  _dangerZoneY: 4
+  _dangerZoneX: 1.2

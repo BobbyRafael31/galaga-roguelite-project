@@ -49,6 +49,9 @@ MonoBehaviour:
   _firePoint: {fileID: 3730141824370738840}
   _baseMaxBulletsOnScreen: 2
   _baseFireCooldown: 0.05
+  BonusPiercing: 0
+  HasTwinBlasters: 0
+  HasHeavyOrdinance: 0
 --- !u!1 &4169115171971544887
 GameObject:
   m_ObjectHideFlags: 0
@@ -129,11 +132,11 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -1160703885
+  m_SortingLayer: -1
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  m_Sprite: {fileID: -2770624651766692744, guid: 077a883c37c5d364e91b61446a39de12, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -172,4 +175,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
   _baseMaxHealth: 3
   _iFrameDuration: 1.5
+  _respawnDelay: 1.5
+  _defaultIconSprite: {fileID: 0}
   _extents: {x: 0.35, y: 0.35}
+  HasKineticPlating: 0
